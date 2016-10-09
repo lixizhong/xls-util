@@ -20,12 +20,13 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.WorkbookUtil;
 
+
 public class XlsWriter{
 	
 	private XlsWriter(){}
 	
 	/**
-	 * 生成xls，double类型默认保留2位小数
+	 * 生成xls
 	 * @param dataList
 	 * @param setting
 	 * @param os
@@ -112,8 +113,13 @@ public class XlsWriter{
 		}
 		
 		//填充表格数据
-		for (int i=0; i<dataList.size(); i++) {
-			T obj = dataList.get(i);
+		int i = 0;
+		for (T obj : dataList) {
+			
+			if(obj == null){
+				continue;
+			}
+			
 			Row row = sheet.createRow(rowIndex++);
 			
 			int cellIndex = 0;
@@ -133,64 +139,45 @@ public class XlsWriter{
 				Object propValue = null;
 				
 				String propName = cs.getPropName();
-				try {
-					propValue = PropertyUtils.getProperty(obj, propName);
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-					throw new IllegalArgumentException("生成xls文件出错，获取["+propName+"]出错");
-				} catch (InvocationTargetException e) {
-					e.printStackTrace();
-					throw new IllegalArgumentException("生成xls文件出错，获取["+propName+"]出错");
-				} catch (NoSuchMethodException e) {
-					e.printStackTrace();
-					throw new IllegalArgumentException("生成xls文件出错，获取["+propName+"]出错");
-				} finally {
-					wb.close();
-				}
-				
 				CellWriter valueHandler = cs.getValueHandler();
 				
-				if(valueHandler != null){
-					propValue = valueHandler.getCellValue(propValue);
+				if(StringUtils.isBlank(propName)){
+					//如果propName为空，那么就使用CellWriter设置表格的值，obj作为CellWriter的参数
+					if(valueHandler != null){
+						propValue = valueHandler.getCellValue(obj);
+					}
+				}else{
+					try {
+						propValue = PropertyUtils.getProperty(obj, propName);
+					} catch (IllegalAccessException e) {
+						e.printStackTrace();
+						throw new IllegalArgumentException("生成xls文件出错，获取["+propName+"]出错");
+					} catch (InvocationTargetException e) {
+						e.printStackTrace();
+						throw new IllegalArgumentException("生成xls文件出错，获取["+propName+"]出错");
+					} catch (NoSuchMethodException e) {
+						e.printStackTrace();
+						throw new IllegalArgumentException("生成xls文件出错，获取["+propName+"]出错");
+					} finally {
+						wb.close();
+					}
+					//允许使用CellWriter对取到的值再做一次加工，CellWriter的参数为propValue
+					if(valueHandler != null){
+						propValue = valueHandler.getCellValue(propValue);
+					}
 				}
 				
 				if(propValue == null){
 					continue;
 				}
 				
-				if(propValue instanceof Number){
-					cell.setCellType(Cell.CELL_TYPE_NUMERIC);
-					
-					if(propValue instanceof Integer){
-						cell.setCellValue((Integer) propValue);
-					} else if(propValue instanceof Double){
-						cell.setCellStyle(cellDoubleStyle);
-						cell.setCellValue((Double) propValue);
-					} else if(propValue instanceof Float){
-						cell.setCellStyle(cellDoubleStyle);
-						cell.setCellValue((Float) propValue);
-					} else if (propValue instanceof Long) {
-						cell.setCellValue((Long) propValue);
-					} else if(propValue instanceof BigDecimal){
-						cell.setCellStyle(cellDoubleStyle);
-						cell.setCellValue(((BigDecimal) propValue).doubleValue());
-					} else {
-						cell.setCellValue(propValue.toString());
-					}
-				} else if(propValue instanceof Date) {
-					cell.setCellStyle(cellDateStyle);
-					cell.setCellValue((Date) propValue);
-				} else if(propValue instanceof Calendar) {
-					cell.setCellStyle(cellDateStyle);
-					cell.setCellValue((Calendar) propValue);
-				} else {
-					cell.setCellValue(propValue.toString());
-				}
+				setCellValue(cellDateStyle, cellDoubleStyle, cell, propValue);
 			}
+			i++;
 		}
 		
-		for (int i = 0; i < columnSize; i++) {
-			sheet.autoSizeColumn(i);
+		for (int j = 0; j < columnSize; j++) {
+			sheet.autoSizeColumn(j);
 		}
 		
 		if(appendMessages != null && appendMessages.length > 0){
@@ -217,6 +204,37 @@ public class XlsWriter{
 		
 		wb.write(os);
 		wb.close();
+	}
+
+	private static void setCellValue(CellStyle cellDateStyle, CellStyle cellDoubleStyle, Cell cell, Object propValue) {
+		if(propValue instanceof Number){
+			cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+			
+			if(propValue instanceof Integer){
+				cell.setCellValue((Integer) propValue);
+			} else if(propValue instanceof Double){
+				cell.setCellStyle(cellDoubleStyle);
+				cell.setCellValue((Double) propValue);
+			} else if(propValue instanceof Float){
+				cell.setCellStyle(cellDoubleStyle);
+				cell.setCellValue((Float) propValue);
+			} else if (propValue instanceof Long) {
+				cell.setCellValue((Long) propValue);
+			} else if(propValue instanceof BigDecimal){
+				cell.setCellStyle(cellDoubleStyle);
+				cell.setCellValue(((BigDecimal) propValue).doubleValue());
+			} else {
+				cell.setCellValue(propValue.toString());
+			}
+		} else if(propValue instanceof Date) {
+			cell.setCellStyle(cellDateStyle);
+			cell.setCellValue((Date) propValue);
+		} else if(propValue instanceof Calendar) {
+			cell.setCellStyle(cellDateStyle);
+			cell.setCellValue((Calendar) propValue);
+		} else {
+			cell.setCellValue(propValue.toString());
+		}
 	}
 	
 }
