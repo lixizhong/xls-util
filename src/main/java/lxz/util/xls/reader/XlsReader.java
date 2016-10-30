@@ -7,10 +7,7 @@ import org.apache.poi.ss.usermodel.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class XlsReader {
 	
@@ -49,7 +46,7 @@ public class XlsReader {
 		rowFrom = rowFrom < 0 ? firstRowNum : rowFrom;
 		rowTo = rowTo < 0 ? lastRowNum : rowTo;
 		
-		List<T> dataList = new ArrayList<T>(rowTo - rowFrom + 1);
+		List<T> dataList = new LinkedList<T>();
 
 		for (int rowIndex = rowFrom; rowIndex <= rowTo; rowIndex++) {
 			Row row = sheet.getRow(rowIndex);
@@ -87,6 +84,8 @@ public class XlsReader {
 
 			dataList.add(t);
 		}
+
+        wb.close();
 		
 		return dataList;
 	}
