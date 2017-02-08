@@ -1,5 +1,6 @@
 package lxz.util.xls.writer;
 
+
 public class CellWriterSetting{
 	private final String columnName;
 	private final String propName;

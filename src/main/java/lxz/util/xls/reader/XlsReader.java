@@ -7,7 +7,10 @@ import org.apache.poi.ss.usermodel.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class XlsReader {
 	
@@ -37,56 +40,68 @@ public class XlsReader {
 
 		InputStream is = new FileInputStream(filePath);
 
-		Workbook wb = WorkbookFactory.create(is);
-		Sheet sheet = wb.getSheetAt(sheetIndex);
+		return readXls(is, sheetIndex, rowFrom, rowTo, cellList, rowValueHandler);
+	}
 
-		int firstRowNum = sheet.getFirstRowNum();
-		int lastRowNum = sheet.getLastRowNum();
-		
-		rowFrom = rowFrom < 0 ? firstRowNum : rowFrom;
-		rowTo = rowTo < 0 ? lastRowNum : rowTo;
-		
-		List<T> dataList = new LinkedList<T>();
+    public static <T> List<T> readXls(
+            InputStream is,
+            int sheetIndex,
+            int rowFrom,
+            int rowTo,
+            List<CellReaderSetting> cellList,
+            RowReader<T> rowValueHandler) throws EncryptedDocumentException, InvalidFormatException, IOException {
 
-		for (int rowIndex = rowFrom; rowIndex <= rowTo; rowIndex++) {
-			Row row = sheet.getRow(rowIndex);
+        Workbook wb = WorkbookFactory.create(is);
+        Sheet sheet = wb.getSheetAt(sheetIndex);
 
-			Map<String, Object> cellMap = new HashMap<String, Object>(row.getLastCellNum() - row.getFirstCellNum() + 1);
+        int firstRowNum = sheet.getFirstRowNum();
+        int lastRowNum = sheet.getLastRowNum();
 
-			for (CellReaderSetting cs : cellList) {
-				
-				Cell cell = row.getCell(cs.getColumnIndex());
-				
-				if(cell == null){
-					cellMap.put(cs.getPropName(), null);
-					continue;
-				}
-				
-				Object cellValue = null;
-				int cellType = cell.getCellType();
+        rowFrom = rowFrom < 0 ? firstRowNum : rowFrom;
+        rowTo = rowTo < 0 ? lastRowNum : rowTo;
 
-				switch (cellType) {
-	                case Cell.CELL_TYPE_NUMERIC:
-	                    if (DateUtil.isCellDateFormatted(cell)) {
-	                    	cellValue = cell.getDateCellValue();
-	                    } else {
-	                    	cellValue = cell.getNumericCellValue();
-	                    }
-	                    break;
-	                default:
-	                	cellValue = cell.getStringCellValue();
-	            }
-				
-				cellMap.put(cs.getPropName(), cellValue);
-			}
+        //List<T> dataList = new ArrayList<T>(rowTo - rowFrom + 1);
+        List<T> dataList = new LinkedList<T>();
 
-			T t = rowValueHandler.getRowValue(cellMap);
+        for (int rowIndex = rowFrom; rowIndex <= rowTo; rowIndex++) {
+            Row row = sheet.getRow(rowIndex);
 
-			dataList.add(t);
-		}
+            Map<String, Object> cellMap = new HashMap<String, Object>(row.getLastCellNum() - row.getFirstCellNum() + 1);
+
+            for (CellReaderSetting cs : cellList) {
+
+                Cell cell = row.getCell(cs.getColumnIndex());
+
+                if(cell == null){
+                    cellMap.put(cs.getPropName(), null);
+                    continue;
+                }
+
+                Object cellValue = null;
+                int cellType = cell.getCellType();
+
+                switch (cellType) {
+                    case Cell.CELL_TYPE_NUMERIC:
+                        if (DateUtil.isCellDateFormatted(cell)) {
+                            cellValue = cell.getDateCellValue();
+                        } else {
+                            cellValue = cell.getNumericCellValue();
+                        }
+                        break;
+                    default:
+                        cellValue = cell.getStringCellValue();
+                }
+
+                cellMap.put(cs.getPropName(), cellValue);
+            }
+
+            T t = rowValueHandler.getRowValue(cellMap);
+
+            dataList.add(t);
+        }
 
         wb.close();
-		
-		return dataList;
-	}
+
+        return dataList;
+    }
 }
