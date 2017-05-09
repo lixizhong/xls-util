@@ -18,17 +18,17 @@ public class TestXls {
 	public void testReadWrite2() throws Exception {
         System.out.println("开始读取");
         List<Student> dataList = readData();
-        System.out.println("开始写入");
-
-        XlsWriterSetting setting = createSetting();
-        ExcelFile excelFile = XlsWriter.initExcelFile(setting);
-        XlsWriter.appendList(excelFile, dataList);
-        FileOutputStream fos = new FileOutputStream("copy.xlsx");
-        XlsWriter.saveFile(excelFile, fos);
-        XlsWriter.appendList(excelFile, dataList);
-        XlsWriter.saveFile(excelFile, fos);
-        XlsWriter.closeFile(excelFile);
-        fos.close();
+//        System.out.println("开始写入");
+//
+//        XlsWriterSetting setting = createSetting();
+//        ExcelFile excelFile = XlsWriter.initExcelFile(setting);
+//        XlsWriter.appendList(excelFile, dataList);
+//        FileOutputStream fos = new FileOutputStream("copy.xlsx");
+//        XlsWriter.saveFile(excelFile, fos);
+//        XlsWriter.appendList(excelFile, dataList);
+//        XlsWriter.saveFile(excelFile, fos);
+//        XlsWriter.closeFile(excelFile);
+//        fos.close();
     }
 
 	@Test
@@ -100,7 +100,7 @@ public class TestXls {
 
         List<Student> dataList = null;
         try {
-            dataList = XlsReader.readXls("读.xls", 0, 1, -1, cellList, new RowReader<Student>(){
+            dataList = XlsReader.readXls("工作簿1.xlsx", 0, 1, -1, cellList, new RowReader<Student>(){
                 public Student getRowValue(Map<String, Object> cells) {
                     Student s = new Student();
 
